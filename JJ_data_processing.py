@@ -7,6 +7,9 @@ Created on Mon Sep 10 10:28:59 2018
 
 import numpy as np
 import os
+from scipy.interpolate import UnivariateSpline
+import pandas as pd
+pd.set_eng_float_format(accuracy=1, use_eng_prefix=True)
 
 import gershlab.JJformulas as jjf
 
@@ -19,11 +22,10 @@ from IPython.core.display import display, HTML
 import qcodes as qc
 from qcodes.dataset.database import initialise_database
 from qcodes.dataset.plotting import plot_by_id, get_data_by_id
-from scipy.interpolate import UnivariateSpline
+
 
 from si_prefix import si_format as SI
-import pandas as pd
-pd.set_eng_float_format(accuracy=1, use_eng_prefix=True)
+
 
 
 def update_df(df, index, valdict):
@@ -36,8 +38,6 @@ def update_df(df, index, valdict):
     df = df.assign(**calc_params)
         
     return df
-
-
 
 
 def calc_jj_param(df, params = None):
@@ -109,13 +109,10 @@ def show_df(df, sort = None, find = None, which = 'all'):
         cdf = cdf[which]
     
     display(HTML(cdf.to_html(escape = False, classes='table table-hover', header="true")))
-#     return cdf
 
 
 def read_opj_data(cols : tuple, preprint : bool = True):
     app = O.ApplicationSI()
-#     app.Visible = app.MAINWND_SHOW
-    
     app.BeginSession()
     
     outputData = app.GetWorksheet(app.ActivePage.Name)
@@ -155,8 +152,6 @@ def pbi(idx, **kwargs):
     
     if interactive:
         connect_interactive(ax)
- 
-    
     return ax
 
 
@@ -164,7 +159,6 @@ def batch_plot_by_id(ids, ax = None, labels = None, **kwargs):
     if ax is None:
         fig, ax = plt.subplots()
 
-        
     if 'marker'  not in kwargs.keys():
         kwargs['marker'] = 'o'
         
@@ -177,8 +171,6 @@ def batch_plot_by_id(ids, ax = None, labels = None, **kwargs):
         else:
             label = ''
 
-     
-            
         plot_by_id(idx, axes = ax, label = label, **kwargs)
         
     ax.legend()
@@ -257,19 +249,13 @@ def xy_by_id(idx):
 
 
 def extract_Isw_R0_by_id (idx, dy = 50e-6, yoff = 0):
-    
-    
+
     Is,Vs = xy_by_id(idx)
     
     Vs -= yoff
 
     Is,Vs = cut_dxdy(Is, Vs, dx = 250e-9 ,dy = dy)    
     return extract_Isw_R0 (Is,Vs)
-
-
-
-        
-
 
 def cut_dxdy(vA0, vB0, dx,dy):
     
@@ -322,15 +308,6 @@ def eng_string( x, sig_figs=3, si=True):
 
     return ( '%s%s%s') % ( sign, x3, exp3_text)
 
-
-
-
-
-
-
-
-
-
 def extract_Isw_R0 (Is,Vs):
     
         if len( Is )== 0 or len( Vs )== 0 :
@@ -339,21 +316,14 @@ def extract_Isw_R0 (Is,Vs):
             print('no points in cut range')
             return Isw, R0
         
-        
-        
         Isw = ( np.max(Is) - np.min(Is) ) /2
         
         order = Is.argsort()
         
         Is, Vs = Is[order], Vs[order]
         
-#         n = len(Is)
-#         n_min, n_max = np.int(n/3), np.int(2*n/3)
-#         n_sl = slice(n_min, n_max)
-
         n_sl = np.where( (Is > 0)  ) and np.where (Is < 300e-12)
-#         n_sl = np.where( abs(Is) < 200e-12 ) 
-        
+
         if len( Vs[n_sl] )== 0 :
             R0 = np.nan
             return Isw, R0
@@ -363,127 +333,4 @@ def extract_Isw_R0 (Is,Vs):
         
         if R0 < 0:
             R0 = np.nan
-#         R0 = np.mean(np.diff(Vs[n_sl])) / np.mean(np.diff(Is[n_sl]))
-        
         return Isw, R0
-
-def load_by_key(exp, key, val):
-        
-    ind =   np.argmin ( np.abs( exp[key] - val ))
-    return ind
-    
-def plot_by_key(exp, key, val, ax = None,**kw):
-   
-    ind =   np.argmin ( np.abs( exp[key] - val ))
-    
-    I, V = exp['Is'][ind], exp['Vs'][ind]
-    
-#     I = I - V/1.3e9
-
-    if ax == None:
-        fig, ax = plt.subplots()
-        
-    ax.plot( I, V, 'o', label = 'T = {:2.0f} mK, {} = {:1.2f} '.format( exp['T']/1e-3, key, exp[key][ind] ) , **kw)
-    ax.legend()   
-    
-    return I, V
-    
-    
-    
-    
-    
-    
-    
-def get_R0(x,y, x0 = 0, VERBOSE = False):
-    
-    if len(y) < 5:
-        return np.nan
-    
-    sort_ind = np.argsort(x)
-    x, y = x[sort_ind], y[sort_ind]
-
-    _, unique_ind = np.unique(x, return_index=True)
-    x, y = x[unique_ind], y[unique_ind]
-
-    x,y = remove_jumps(x,y)
-
-    spl = UnivariateSpline(x, y)
-    spl.set_smoothing_factor(0.5)
-    
-    diff = np.diff( spl(x) )/ np.diff( x )
-    
-    i_x0 = np.argmin( abs( x - x0) )
-    
-    R0 = diff[i_x0] 
-    
-    if VERBOSE:
-        fig, ax = plt.subplots()
-        
-        ax.plot(x,y, 'o', ls = '')
-        ax.plot(x, spl(x))
-        
-        ax2 = ax.twinx()
-        ax2.plot(x[:-1], diff, c = 'k')
-    
-    return R0
-    
-    
-
-
-
-
-def V_func(I,V, val):
-    out = []
-    for x in np.nditer(val):
-        out = np.append (out,  V[np.argmin(abs(I-x))])
-    return out
-
-
-
-def remove_jumps(x,y):
-    
-    
-    if len(y) < 3:
-        return x,y
-    
-    y_out = []
-    i_off = 1
-    Voff = 0
-    for i in range(len(y) ):
-
-        steps = abs(np.diff(y))
-
-        if i > i_off and i < len(y) - 2 :
-
-            avg_diff = np.mean(steps[:i-1])
-            if steps[i-1] > 10* avg_diff:
-                Voff -= steps[i-1]
-
-
-
-        y_out.append(y[i]+Voff)
-
-
-    y = np.array(y_out)
-    x = x
-    return x,y
-
-
-
-def XYEqSp(Xarr, Yarr, step):
-    outX = []
-    outY = []
-
-    if len(Xarr) == 0 :
-        outX, outY = 0, 0
-    else:    
-        n = int((np.max(Xarr) - np.min(Xarr)) // step)    
-
-        for i in range(n):
-            outX = np.append( outX, V_func(Xarr, Xarr, np.min(Xarr) + i*step)  )
-            outY = np.append( outY, V_func(Xarr, Yarr, np.min(Xarr) + i*step)  )
-
-    return outX, outY
-
-
-    
