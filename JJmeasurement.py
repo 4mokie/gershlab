@@ -18,28 +18,16 @@ from collections.abc import Iterable
 class JJmeas(QCmeas):
     
     def __init__(self, sample, tools = [] ,  folder = r'..\_expdata'): 
-        
-        
         super().__init__(sample, tools ,  folder)
-        
-#         self.exps = Exps(sample, folder)
-        
-    
-    
+
     def set_param(self, **kwparams):
-        
-        
+
         for k, v in kwparams:
             self.k = v
             self.exps.k = v
-        
-        
-        
- 
-    
+
     def stabilize_I(self, amp):
-        
-        
+
         I = self.tools['I']
             
         x = np.arange(100)
@@ -49,17 +37,12 @@ class JJmeas(QCmeas):
             I.set(i)
             time.sleep(0.1)
 
-
-    
-            
             
     def IVC_cust (self, i_list, Ioff = 0, Vthr = 1, dt = 0.1, N_avg = 1, label = ''):
 
         I = self.tools['I']
         V = self.tools['V']
-        
-        
-        
+
         V.meas_Voff()
         Voff =  V.Voff
         
@@ -79,20 +62,12 @@ class JJmeas(QCmeas):
             for i in ti_list:
 
                 I.set(i+Ioff)
-                
-                
                 time.sleep(dt)
 
                 is_vs = [[I.get(),V.get()] for _ in range( N_avg)]
                 
                 ir, v = np.mean(is_vs, axis = 0)
-
-                
-                
-                    
                 res = [( I, ir - Ioff  ), ( V, v - Voff  )]
-                
-
                 
                 ti_list.set_description('I = {}A'.format( SI(ir) ))
                 
@@ -105,9 +80,7 @@ class JJmeas(QCmeas):
                 
         
         self.stabilize_I(amp = i)
-        
         run_id = datasaver.run_id
-        
         self.last_runid = run_id
         
         return run_id 
@@ -117,7 +90,6 @@ class JJmeas(QCmeas):
 
         i_list = udu_list(amp, stp)
         run_id = self.IVC_cust ( i_list, **kwargs)
-        
 
         return run_id 
     
@@ -129,10 +101,7 @@ class JJmeas(QCmeas):
                             np.linspace(-amp, 0, int(amp/stp/10)+1)])
                                         
         run_id = self.IVC_cust ( i_list, **kwargs)
-        
-        
-
-        return run_id 
+        return run_id
 
 
     def meas_hist(self, N, i_list, dt = 0, Vthr = 30e-6, label =''):
@@ -176,23 +145,14 @@ class JJmeas(QCmeas):
                 
                 
             res = [( Isw, i  ), ( t, time.time() - t0  )]
-                
-            
-                
-                
             datasaver.add_result(*res)
-            
-        
+
         run_id = datasaver.run_id
-               
-        return run_id 
-    
-    
-    
-    
+        return run_id
+
+
     def cos_to_B(self, cos):
-        
-        
+
         for frust in ['ZF', 'FF']:
               if not hasattr(self, frust):
                      raise Exception(f'Please indicate value of {frust}!')
@@ -205,8 +165,7 @@ class JJmeas(QCmeas):
 
     
     def B_to_cos(self, B):
-        
-        
+
         for frust in ['ZF', 'FF']:
               if not hasattr(self, frust):
                      raise Exception(f'Please indicate value of {frust}!')
@@ -218,8 +177,7 @@ class JJmeas(QCmeas):
 
     
     def Bscan_f(self, f, B_list = None):
-        
-        
+
         B = self.tools['B']
         idx = Parameter(name = 'runid', label = '#')
         
@@ -229,8 +187,7 @@ class JJmeas(QCmeas):
             label = 'Bscan ids list ' + self.make_label()
 
         self.name_exp( exp_type = label )
-        
-        
+
         tB_list = tqdm_notebook(B_list)
         
         with meas.run() as datasaver:
@@ -240,30 +197,14 @@ class JJmeas(QCmeas):
                 B.set(b)
                 tB_list.set_description('B = {}A'.format( SI(b) ))
 
-                f
-
                 yield self
                 
                 res = [( runid, idx  ), ( B, b  )]
-                
                 datasaver.add_result(*res)
 
-            
-            
-            
-            
-            
-            
-    
     
     def Bscan(self,  B_list = None, cos_list = None):
 
-#         self.isexp = True
-        
-        runids = []
-        
-        exps = dict()
-        
         B = self.tools['B']
         T = self.tools['T']
         
@@ -287,19 +228,11 @@ class JJmeas(QCmeas):
             yield self
             
             runids.append(self.last_runid)
-            #             exps[self.last_runid] = self.tool_status()
-        
-        
-        
+
         B.set(0)    
 
-        
-
-            
-            
     def Isw_by_id(self, ids, fullIVC = True, **kwargs):
-        
-        
+
         self.db_connect()
         
         if fullIVC:
