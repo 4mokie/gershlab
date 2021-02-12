@@ -16,7 +16,10 @@ from collections.abc import Iterable
 class JJmeas(QCmeas):
 
     def __init__(self, sample, tools=[], folder=r'..\_expdata'):
+
         super().__init__(sample, tools, folder)
+
+    #         self.exps = Exps(sample, folder)
 
     def set_param(self, **kwparams):
 
@@ -43,25 +46,30 @@ class JJmeas(QCmeas):
         V.meas_Voff()
         Voff = V.Voff
 
-        self.stabilize_I(amp=np.max(i_list))
-
         meas = self.set_meas(V, I)
 
         ti_list = tqdm_notebook(i_list, leave=False)
 
         if label == '':
             label = self.make_label()
+        else:
+            try:
+                label += str(self.tool_status(['B', 'T']))
+            except:
+                print('B or T device is not added')
 
         self.name_exp(exp_type=label)
         with meas.run() as datasaver:
             for i in ti_list:
 
                 I.set(i + Ioff)
+
                 time.sleep(dt)
 
                 is_vs = [[I.get(), V.get()] for _ in range(N_avg)]
 
                 ir, v = np.mean(is_vs, axis=0)
+
                 res = [(I, ir - Ioff), (V, v - Voff)]
 
                 ti_list.set_description('I = {}A'.format(SI(ir)))
@@ -73,8 +81,15 @@ class JJmeas(QCmeas):
                 datasaver.add_result(*res)
 
         self.stabilize_I(amp=i)
+
         run_id = datasaver.run_id
+
         self.last_runid = run_id
+
+        #         if self.isexp:
+
+        #             self.exps[datasaver.run_id] = self.make_exp_line()
+        #             self.isexp = False
 
         return run_id
 
@@ -93,51 +108,16 @@ class JJmeas(QCmeas):
                                  np.linspace(-amp, 0, int(amp / stp / 10) + 1)])
 
         run_id = self.IVC_cust(i_list, **kwargs)
+
         return run_id
 
-    def meas_hist(self, N, i_list, dt=0, Vthr=30e-6, label=''):
+    def IVC_pos(self, amp, stp, **kwargs):
 
-        I = self.tools['I']
-        V = self.tools['V']
+        i_list = np.concatenate([np.linspace(0, amp, int(amp / stp)),
+                                 np.linspace(amp, 0, int(amp / stp))])
 
-        V.meas_Voff()
-        Voff = V.Voff
+        run_id = self.IVC_cust(i_list, **kwargs)
 
-        Isw = Parameter(name='Swithching current', label='Swithching current',
-                        unit='A')
-
-        t = Parameter(name='Time', label='Time',
-                      unit='s')
-
-        meas = self.set_meas(Isw, t)
-
-        if label == '':
-            label = 'hist ' + self.make_label()
-
-        self.name_exp(exp_type=label)
-
-        to = time.time()
-
-        ti_list = tqdm_notebook(i_list, leave=False)
-        with meas.run() as datasaver:
-
-            V = Voff
-
-            for i in ti_list:
-
-                if (V - Voff) < Vthr:
-                    break
-
-                time.sleep(dt)
-                I.set(i)
-                ti_list.set_description('I = {}A'.format(SI(i)))
-
-                V = V.get()
-
-            res = [(Isw, i), (t, time.time() - t0)]
-            datasaver.add_result(*res)
-
-        run_id = datasaver.run_id
         return run_id
 
     def cos_to_B(self, cos):
@@ -160,34 +140,41 @@ class JJmeas(QCmeas):
         ZF = self.ZF
         FF = self.FF
 
-        return np.cos(np.pi / 2 * (B - ZF) / (FF - ZF))
+        return np.abs(np.cos(np.pi / 2 * (B - ZF) / (FF - ZF)))
 
-    def Bscan_f(self, f, B_list=None):
+    def Isw_by_id(self, ids, fullIVC=True, yoff=0, dy=50e-6, isBatch=False):
 
-        B = self.tools['B']
-        idx = Parameter(name='runid', label='#')
+        self.db_connect()
 
-        meas = self.set_meas(idx, B)
+        if isBatch:
+            _, ids = self.xy_by_id(ids)
+        elif not isinstance(ids, Iterable):
+            ids = [ids]
 
-        if label == '':
-            label = 'Bscan ids list ' + self.make_label()
+        Ics = np.array([extract_Isw_R0_by_id(idx, fullIVC=fullIVC, dy=dy, yoff=yoff)[0] for idx in ids])
 
-        self.name_exp(exp_type=label)
+        if len(Ics) == 1:
+            Ics = Ics[0]
 
-        tB_list = tqdm_notebook(B_list)
+        return Ics
 
-        with meas.run() as datasaver:
+    def R0_by_id(self, ids, fullIVC=True, yoff=0, dy=50e-6):
 
-            for b in tB_list:
-                B.set(b)
-                tB_list.set_description('B = {}A'.format(SI(b)))
+        self.db_connect()
 
-                yield self
+        if not isinstance(ids, Iterable):
+            ids = [ids]
 
-                res = [(runid, idx), (B, b)]
-                datasaver.add_result(*res)
+        R0s_errR0s = np.array([extract_Isw_R0_by_id(idx, fullIVC=fullIVC, dy=dy, yoff=yoff)[1] for idx in ids])
 
-    def Bscan(self, B_list=None, cos_list=None):
+        R0s, errR0s = R0s_errR0s.T
+
+        if len(R0s) == 1:
+            R0s = R0s[0]
+            errR0s = errR0s[0]
+        return R0s, errR0s
+
+    def Bscan_old(self, B_list=None, cos_list=None):
 
         B = self.tools['B']
         T = self.tools['T']
@@ -209,57 +196,88 @@ class JJmeas(QCmeas):
 
             yield self
 
-            runids.append(self.last_runid)
+        #             runids.append(self.last_runid)
 
         B.set(0)
 
-    def Isw_by_id(self, ids, fullIVC=True, **kwargs):
+    def Bscan(self, B_list=None, cos_list=None, label=''):
 
-        self.db_connect()
+        B = self.tools['B']
+        T = self.tools['T']
+        id_param = Parameter(name='runid', label='runid', unit='')
 
-        if fullIVC:
-            k = 1
-        else:
-            k = 2
+        meas = self.set_meas(id_param, B)
 
-        if not isinstance(ids, Iterable):
-            ids = [ids]
+        if label == '':
+            label = 'Bscan'
 
-        Ics = np.array([k * extract_Isw_R0_by_id(idx, **kwargs)[0] for idx in ids])
+        self.name_exp(exp_type=label)
 
-        if len(Ics) == 1:
-            Ics = Ics[0]
+        if B_list is None and cos_list is None:
+            raise Exception('Please specify either B or cos list!')
 
-        return Ics
+        elif B_list is not None and cos_list is not None:
+            raise Exception('Please choose either B or cos list!')
 
-    def Tscan(self, T_list):
+        elif cos_list is not None:
+            B_list = self.cos_to_B(cos_list)
 
-        htr = self.tools['htr']
+        tB_list = tqdm_notebook(B_list)
+        with meas.run() as datasaver:
+            for b in tB_list:
+                B.set(b)
+                tB_list.set_description('B = {}A'.format(SI(b)))
+
+                yield self
+
+                datasaver.add_result((B, b), (id_param, self.last_runid))
+
+        B.set(0)
+
+    def Tscan(self, T_list, label=''):
+
         T8 = self.tools['T']
+        htr = self.tools['htr']
+        id_param = Parameter(name='runid', label='runid', unit='')
+
+        meas = self.set_meas(id_param, T8)
+
+        if label == '':
+            label = 'Tscan'
+
+        self.name_exp(exp_type=label)
+
+        #         T8 = self.tools['T']
 
         tolerT8 = 0.02
         chkrepeat = 20
         chkperiod_sec = 2
 
         tT_list = tqdm_notebook(T_list)
-        for t in tT_list:
+        with meas.run() as datasaver:
 
-            htr.set(t)
-            print('ramping T8 to {}K...'.format(SI(t)))
-            time.sleep(30)
+            for t in tT_list:
 
-            count_T = 0
-            while count_T < chkrepeat:
-                T_now = T8.get()
-                if (1 - tolerT8) * t <= T_now <= (1 + tolerT8) * t:
-                    count_T += 1
+                htr.set(t)
+                print('ramping T8 to {}K...'.format(SI(t)))
+                time.sleep(30)
 
-                    time.sleep(chkperiod_sec)
-                    print('{}'.format(SI(T_now), end=" "))
-                elif count_T >= 1:
-                    count_T -= 1
+                count_T = 0
+                while count_T < chkrepeat:
+                    T_now = T8.get()
+                    if (1 - tolerT8) * t <= T_now <= (1 + tolerT8) * t:
+                        count_T += 1
 
-            print('T is set')
-            tT_list.set_description('T = {}K'.format(SI(t)))
+                        time.sleep(chkperiod_sec)
+                        print('{}'.format(SI(T_now), end=" "))
+                    elif count_T >= 1:
+                        count_T -= 1
 
-            yield self
+                print('T is set')
+                tT_list.set_description('T = {}K'.format(SI(t)))
+
+                yield self
+
+                datasaver.add_result((T8, t), (id_param, self.last_runid))
+
+
