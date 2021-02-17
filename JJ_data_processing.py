@@ -11,7 +11,7 @@ from scipy.interpolate import UnivariateSpline
 import pandas as pd
 pd.set_eng_float_format(accuracy=1, use_eng_prefix=True)
 
-import gershlab.JJformulas as jjf
+##import gershlab.JJformulas as jjf
 
 import OriginExt as O
 import matplotlib.pyplot as plt
@@ -25,6 +25,10 @@ from qcodes.dataset.plotting import plot_by_id, get_data_by_id
 
 
 from si_prefix import si_format as SI
+
+from scipy.constants import k, h, e
+
+import lmfit as lmf
 
 kB = k
 γ = 0.57721566
