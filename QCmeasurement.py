@@ -13,7 +13,7 @@ from si_prefix import si_format as SI
 
 from tqdm import tqdm, tqdm_notebook
 
-from  gershlab.JJ_data_processing import pbi, bpbi
+from  gershlab.JJ_data_processing import pbi, bpbi, xy_by_id
 
 
 class QCmeas():
