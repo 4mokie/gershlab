@@ -146,19 +146,19 @@ class JJmeas(QCmeas):
         return np.abs(np.cos(np.pi / 2 * (B - ZF) / (FF - ZF)))
 
     def Isw_by_id(self, ids, fullIVC=True, yoff=0, dy=50e-6, isBatch=False):
-	"""Calculates Isw for given id(s) as a max current on sc branch 
+        """Calculates Isw for given id(s) as a max current on sc branch 
 
-	Parameters:
-	 ids      : ids of IVC, single or array
-	 fullIVC  : indicates whether the IVC was measured for both + and - directions
-	 yoff	  : vertical offset of sc branch
-	 dy	  : vertical size of the window where sc branch is located
-	 isBatch  : indicates whether given id is a batch id referring to multiple IVCs
+        Parameters:
+         ids      : ids of IVC, single or array
+         fullIVC  : indicates whether the IVC was measured for both + and - directions
+         yoff	  : vertical offset of sc branch
+         dy	  : vertical size of the window where sc branch is located
+         isBatch  : indicates whether given id is a batch id referring to multiple IVCs
 
-	Returns:
-	 Ics      : switching current
-	 
-	"""
+        Returns:
+         Ics      : switching current
+ 
+        """
         self.db_connect()
 
         if isBatch:
@@ -174,18 +174,18 @@ class JJmeas(QCmeas):
         return Ics
 
     def R0_by_id(self, ids, fullIVC=True, yoff=0, dy=50e-6):
-	"""Calculates R0 for given id(s) by linear fitting of the central portion of critical current 
+        """Calculates R0 for given id(s) by linear fitting of the central portion of critical current 
 
-	Parameters:
-	 ids      : ids of IVC, single or array
-	 fullIVC  : indicates if the IVC was measured for both + and - directions
-	 yoff	  : vertical offset of sc branch
-	 dy	  : vertical size of the window where sc branch is located
+        Parameters:
+         ids      : ids of IVC, single or array
+         fullIVC  : indicates if the IVC was measured for both + and - directions
+         yoff	  : vertical offset of sc branch
+         dy	  : vertical size of the window where sc branch is located
 
-	Returns:
-	 R0s      : resistance
-	 errR0s   : fitting error
-	"""
+        Returns:
+         R0s      : resistance
+         errR0s   : fitting error
+        """
 
         self.db_connect()
 
