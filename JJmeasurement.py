@@ -146,8 +146,7 @@ class JJmeas(QCmeas):
         return np.abs(np.cos(np.pi / 2 * (B - ZF) / (FF - ZF)))
 
     def Isw_by_id(self, ids, fullIVC=True, yoff=0, dy=50e-6, isBatch=False):
-	"""
-	Calculates Isw for given id(s) as a max current on sc branch 
+	"""Calculates Isw for given id(s) as a max current on sc branch 
 
 	Parameters:
 	 ids      : ids of IVC, single or array
@@ -175,8 +174,7 @@ class JJmeas(QCmeas):
         return Ics
 
     def R0_by_id(self, ids, fullIVC=True, yoff=0, dy=50e-6):
-	"""
-	Calculates R0 for given id(s) by linear fitting of the central portion of critical current 
+	"""Calculates R0 for given id(s) by linear fitting of the central portion of critical current 
 
 	Parameters:
 	 ids      : ids of IVC, single or array
