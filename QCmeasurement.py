@@ -1,19 +1,17 @@
 import qcodes as qc
-from qcodes.dataset.experiment_container import (Experiment,
-                                                 load_last_experiment,
-                                                 new_experiment)
+from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.database import initialise_database
 from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.parameter import Parameter
-
+from qcodes.dataset.data_set import load_by_run_spec
 import numpy as np
 import time
 
 from si_prefix import si_format as SI
 
-from tqdm import tqdm, tqdm_notebook
+from tqdm import tqdm_notebook
 
-from  gershlab.JJ_data_processing import pbi, bpbi, xy_by_id
+from gershlab.JJ_data_processing import pbi, bpbi, xy_by_id
 
 from collections import Iterable
 
@@ -150,7 +148,7 @@ class QCmeas():
 
         name = '{:s}_'.format(exp_type)
         for var, val in kwargs.items():
-            name += '__{}= {}'.format(var, eng(val))
+            name += '__{}= {}'.format(var, SI(val))
 
         sample_name = "{}".format(self.sample)
 
@@ -217,6 +215,8 @@ class QCmeas():
                 and the second element is the corresponding array of points.
             x1  : optional, slow variable for 3d data, not emplemented
 
+            label: name of the experiment
+
         """
 
         if x1 is not None:
@@ -238,4 +238,3 @@ class QCmeas():
                 datasaver.add_result(*res)
 
         return datasaver.run_id
-

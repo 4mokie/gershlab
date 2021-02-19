@@ -50,7 +50,7 @@ class JJmeas(QCmeas):
         Voff = V.Voff
 
         meas = self.set_meas(V, I)
-
+        self.stabilize_I(amp = np.max(i_list))
         ti_list = tqdm_notebook(i_list, leave=False)
 
         if label == '':
@@ -82,8 +82,6 @@ class JJmeas(QCmeas):
                     break
 
                 datasaver.add_result(*res)
-
-        self.stabilize_I(amp=i)
 
         run_id = datasaver.run_id
 
