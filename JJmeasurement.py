@@ -46,11 +46,13 @@ class JJmeas(QCmeas):
         I = self.tools['I']
         V = self.tools['V']
 
+        self.stabilize_I(amp = np.max(i_list))
+        
         V.meas_Voff()
         Voff = V.Voff
 
         meas = self.set_meas(V, I)
-        self.stabilize_I(amp = np.max(i_list))
+
         ti_list = tqdm_notebook(i_list, leave=False)
 
         if label == '':
