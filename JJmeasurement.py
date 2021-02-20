@@ -157,6 +157,7 @@ class JJmeas(QCmeas):
 
         Returns:
          Ics      : switching current
+         (params, Ics) if isBatch
  
         """
         self.db_connect()
