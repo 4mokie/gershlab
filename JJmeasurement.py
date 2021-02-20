@@ -47,7 +47,7 @@ class JJmeas(QCmeas):
         V = self.tools['V']
 
         self.stabilize_I(amp = np.max(i_list))
-        
+
         V.meas_Voff()
         Voff = V.Voff
 
@@ -162,7 +162,7 @@ class JJmeas(QCmeas):
         self.db_connect()
 
         if isBatch:
-            _, ids = self.xy_by_id(ids)
+            Bs, ids = self.xy_by_id(ids)
         elif not isinstance(ids, Iterable):
             ids = [ids]
 
@@ -171,7 +171,10 @@ class JJmeas(QCmeas):
         if len(Ics) == 1:
             Ics = Ics[0]
 
-        return Ics
+        if isBatch:
+            return (Bs, Ics)
+        else:
+            return Ics
 
     def R0_by_id(self, ids, fullIVC=True, yoff=0, dy=50e-6):
         """Calculates R0 for given id(s) by linear fitting of the central portion of critical current 
