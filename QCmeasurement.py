@@ -1,6 +1,6 @@
 import qcodes as qc
 from qcodes.dataset.experiment_container import new_experiment
-from qcodes.dataset.database import initialise_database
+# from qcodes.dataset.database import initialise_database
 from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.parameter import Parameter
 from qcodes.dataset.data_set import load_by_run_spec
