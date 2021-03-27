@@ -24,8 +24,6 @@ class QCmeas():
         self.sample = sample
         self.folder = folder
 
-        #         self.setup = lambda : None
-
         self.db_connect()
 
     def db_connect(self):
@@ -154,6 +152,17 @@ class QCmeas():
 
         return new_experiment(name=name,
                               sample_name=sample_name)
+
+    def set_state(self, **kwargs):
+        """
+            Setting of certain values to the Instrument parameters
+            args:
+                **kwargs:   dict of InstNicknames and values to be set
+
+        """
+        if kwargs != {}:
+            for var, val in kwargs.items():
+                self.tools[var].set(val)
 
     def tool_status(self, which='all'):
 
