@@ -47,7 +47,7 @@ class MWmeas(QCmeas):
         self.name_exp(exp_type=label)
 
         with meas.run() as datasaver:
-            self.set_state(presets)
+            # self.set_state(presets)
             with iqmixer.ats.get_prepared(N_pts=8192, N_avg=4000):
 
                 for x1 in x1_list:
