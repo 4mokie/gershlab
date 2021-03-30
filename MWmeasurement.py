@@ -70,4 +70,4 @@ class MWmeas(QCmeas):
 
                         datasaver.add_result(*res)
 
-        return out
+        return datasaver.run_id
