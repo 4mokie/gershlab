@@ -41,8 +41,7 @@ class MWmeas(QCmeas):
         x_min = np.min(x_list)
         x_max = np.max(x_list)
 
-        tx_list = tqdm_notebook(x_list, desc='{} to {} {} scan'.format(SI(x_min), SI(x_max), xunit),
-                                leave=False)
+
 
         self.name_exp(exp_type=label)
 
@@ -54,6 +53,8 @@ class MWmeas(QCmeas):
                     if slow is not None:
                         x1device.set(x1)
 
+                    tx_list = tqdm_notebook(x_list, desc='{} to {} {} scan'.format(SI(x_min), SI(x_max), xunit),
+                                            leave=False)
                     for x in tx_list:
 
                         xdevice.set(x)
