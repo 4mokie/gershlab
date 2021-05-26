@@ -5,7 +5,10 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.parameter import Parameter
 from qcodes.dataset.data_set import load_by_run_spec
 import numpy as np
-import time
+import time, math
+
+
+import matplotlib.pyplot as plt
 
 from si_prefix import si_format as SI
 
@@ -39,6 +42,19 @@ class QCmeas():
 
         return out
 
+
+    def xyz_by_id(self, idx):
+        x_raw, y_raw, z_raw = self.xy_by_id(idx)
+
+        x = np.unique( x_raw )
+        y = np.unique( y_raw )
+
+        N_x = len( x )
+        N_y = len( y )
+        
+        z = np.reshape( z_raw, (N_x, N_y) )
+        return x, y, z
+
     def pbi(self, idx, isBatch=False, **kwargs):
 
         self.db_connect()
@@ -46,8 +62,8 @@ class QCmeas():
         if isinstance(idx, Iterable):
             ax = bpbi(idx, **kwargs)
             return ax
-
-        if isBatch:
+         
+        if isBatch == True:
             param, ids = self.xy_by_id(idx)
             ax = self.bpbi(ids, **kwargs)
 
@@ -59,12 +75,30 @@ class QCmeas():
 
         return ax
 
-    def bpbi(self, ids, **kwargs):
+    def mpbi(self, id_list, titles =[], **kwargs):
 
-        self.db_connect()
-        ax = bpbi(ids, **kwargs)
+   
+        fig=plt.figure(figsize = (10,10), dpi= 80, facecolor='w', edgecolor='k')
+        plt.tight_layout()
+        
+        n = len(id_list)
+        print(id_list)
+        col = 2
+        
+        axs = []
+        #gs= GridSpec (n//col , col )
+    
+        for i, _id in enumerate(id_list):
 
-        return ax
+            ax = fig.add_subplot( math.ceil(n/col), col, i+1)
+            self.pbi(_id ,axes = ax,**kwargs)
+            
+            if titles != []:
+                ax.set_title(titles[i])
+            axs += [ax]
+        plt.tight_layout()
+    
+        return axs
 
     def find_in_batch(self, idx, value):
         self.db_connect()
@@ -112,7 +146,7 @@ class QCmeas():
             print('Please define setup procedure')
 
         try:
-            cleanup = self.setup
+            cleanup = self.cleanup
         except AttributeError:
             print('Please define setup procedure')
 
@@ -153,15 +187,15 @@ class QCmeas():
         return new_experiment(name=name,
                               sample_name=sample_name)
 
-    def set_state(self, **kwargs):
+    def set_state(self, settings):
         """
             Setting of certain values to the Instrument parameters
             args:
                 **kwargs:   dict of InstNicknames and values to be set
 
         """
-        if kwargs != {}:
-            for var, val in kwargs.items():
+        if settings != {}:
+            for var, val in settings.items():
                 self.tools[var].set(val)
 
     def tool_status(self, which='all'):
@@ -172,7 +206,10 @@ class QCmeas():
 
         else:
             which_keys = which
-
+            
+        # for key in which_keys:
+        #     print(key, self.tools[key].get())
+        
         readings = {key: SI(self.tools[key].get()) + self.tools[key].unit
                     for key in which_keys}
 
@@ -228,8 +265,6 @@ class QCmeas():
 
         """
 
-        if x1 is not None:
-            print('2d writing is not emplemented yet')
 
         self.setup = lambda: None
         self.cleanup = lambda: None
@@ -237,13 +272,26 @@ class QCmeas():
         xdev, xdat = x
         ydev, ydat = y
 
-        meas = self.set_meas(ydev, xdev)
+        if x1 is not None:
+            x1dev, x1dat = x1
+            meas = self.set_meas(ydev, xdev, x1dev)
+        else:
+            meas = self.set_meas(ydev, xdev)
         self.name_exp(exp_type=label)
 
         with meas.run() as datasaver:
 
-            for _x, _y in zip(xdat, ydat):
-                res = [(xdev, _x), (ydev, _y)]
-                datasaver.add_result(*res)
-
+            if x1 is None:
+                for _x, _y in zip(xdat, ydat):
+                    res = [(xdev, _x), (ydev, _y)]
+                    datasaver.add_result(*res)
+            else:
+                Xdat, X1dat = np.meshgrid(xdat, ydat)
+                Xdat = Xdat.flatten()
+                X1dat = X1dat.flatten()
+                Ydat = ydat.flatten()
+                for _x, _x1,  _y in zip(Xdat, X1dat, Ydat):
+                    res = [(xdev, _x), (x1dev, _x1), (ydev, _y)]
+                    datasaver.add_result(*res)
+                
         return datasaver.run_id
