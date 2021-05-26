@@ -96,9 +96,9 @@ def show_df(df, sort=None, find=None, which='all', status='all'):
 
     cdf = df.copy()
 
-    if status is 'measd':
+    if status == 'measd':
         cdf = cdf[measd]
-    elif status is 'fab':
+    elif status == 'fab':
         cdf = cdf[not measd]
 
     cdf = cdf.sort_index(axis=0)
@@ -113,7 +113,7 @@ def show_df(df, sort=None, find=None, which='all', status='all'):
     if find is not None:
         cdf = cdf.filter(like=find, axis='index')
 
-    if which is not 'all':
+    if which != 'all':
         cdf = cdf[which]
 
     display(HTML(cdf.to_html(escape=False, classes='table table-hover', header="true")))
@@ -145,20 +145,24 @@ def read_opj_data(cols: tuple, preprint: bool = True):
     return sel_data
 
 
-def pbi(idx, **kwargs):
-    if 'marker' not in kwargs.keys():
-        kwargs['marker'] = 'o'
+def pbi(idx,  **kwargs):
+    # if 'marker' not in kwargs.keys():
+    #     kwargs['marker'] = 'o'
 
-    if 'ls' not in kwargs.keys():
-        kwargs['ls'] = 'None'
+    # if 'ls' not in kwargs.keys():
+    #     kwargs['ls'] = 'None'
 
     if 'interactive' in kwargs.keys():
         interactive = kwargs.pop('interactive')
     else:
         interactive = False
 
-    axes, _ = plot_by_id(idx, **kwargs)
-
+    axes, cb = plot_by_id(idx, **kwargs)
+    print(type(cb[0]))
+    try:
+        cb[0].remove()
+    except AttributeError:
+        pass
     ax = axes[0]
 
     if interactive:
@@ -171,11 +175,11 @@ def batch_plot_by_id(ids, axes=None, labels=None, **kwargs):
     if axes is None:
         fig, axes = plt.subplots()
 
-    if 'marker' not in kwargs.keys():
-        kwargs['marker'] = 'o'
+    # if 'marker' not in kwargs.keys():
+    #     kwargs['marker'] = 'o'
 
-    if 'ls' not in kwargs.keys():
-        kwargs['ls'] = 'None'
+    # if 'ls' not in kwargs.keys():
+    #     kwargs['ls'] = 'None'
 
     for i, idx in enumerate(ids):
         if labels is not None:
