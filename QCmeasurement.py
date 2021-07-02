@@ -20,6 +20,17 @@ from collections import Iterable
 
 
 class QCmeas():
+    """
+    This is a general class of qcodes measurements (set of tools + measured data), which is used for both MW and DC measurements 
+
+    Args:
+
+        sample: string - sample name, used for locating database file
+        tools: dict of Instrument.Parameters, each is supposed to suppots set() and get() functions 
+        folder: string containing the path of the folder with all db's
+        
+
+    """
 
     def __init__(self, sample, tools=[], folder=r'..\_expdata'):
 
@@ -30,12 +41,20 @@ class QCmeas():
         self.db_connect()
 
     def db_connect(self):
+        """
+        Call it to make sure that currently we are reading from folder\Experiments_{sample}.db file'
+        """
 
         sample = self.sample
         folder = self.folder
         qc.config["core"]["db_location"] = folder + '\Experiments_{}.db'.format(sample)
 
     def xy_by_id(self, idx):
+        
+        """
+        Returns two arrays of x and y values of idx runid 
+        """
+
 
         self.db_connect()
         out = xy_by_id(idx)
@@ -44,6 +63,13 @@ class QCmeas():
 
 
     def xyz_by_id(self, idx):
+        
+        """
+        Returns three arrays of x, y and z values of idx runid. Works only with complete 3d scans  
+        """
+        
+        ## TODO: make it working for unfinished scans
+        
         x_raw, y_raw, z_raw = self.xy_by_id(idx)
 
         x = np.unique( x_raw )
@@ -56,7 +82,17 @@ class QCmeas():
         return x, y, z
 
     def pbi(self, idx, isBatch=False, **kwargs):
-
+        
+        """
+        Plots data from idx runids on the same plot
+        
+        Args:
+            
+            idx: int or list of ints corrresponded to runids to plot 
+            isBatch: flag showing whether runid contains batch meas, meaning list_of_ids vs list_of_param
+            kwargs: keyword arguments for ax.plot() 
+            
+        """
         self.db_connect()
 
         if isinstance(idx, Iterable):
@@ -76,7 +112,17 @@ class QCmeas():
         return ax
 
     def mpbi(self, id_list, titles =[], **kwargs):
-
+        
+        """
+        Plots data from idx runids on the multiple plots in grid
+        
+        Args:
+            
+            id_list:  list of ints corrresponded to runids to plot 
+            titles: list of strings of the same size as id_list, contains subplot titles
+            kwargs: keyword arguments for ax.plot() 
+            
+        """
    
         fig=plt.figure(figsize = (10,10), dpi= 80, facecolor='w', edgecolor='k')
         plt.tight_layout()
@@ -101,6 +147,13 @@ class QCmeas():
         return axs
 
     def find_in_batch(self, idx, value):
+        """
+        Looks for id in the batch_meas (i.e. runids vs params) with param most close to value 
+        
+
+            
+        """        
+        
         self.db_connect()
         param, ids = self.xy_by_id(idx)
 
@@ -109,6 +162,11 @@ class QCmeas():
         return ids[index], param[index]
 
     def get_name(self, ids):
+        
+        """
+       Returns list of exp names for list of ids 
+            
+        """        
 
         self.db_connect()
 
@@ -199,6 +257,17 @@ class QCmeas():
                 self.tools[var].set(val)
 
     def tool_status(self, which='all'):
+        
+        """
+        Measures (gets) the current value of the tools in self.tools dict
+        
+        
+        Args:
+            
+            which: str or list of str, indicating which tools parameters to get, 'all' or according to the list 
+
+            
+        """
 
         if which == 'all':
 
@@ -228,6 +297,12 @@ class QCmeas():
         return label
 
     def time_scan(self, device, dur=1, dt=0.1):
+        """
+        PPerforms time measurement, calling device.get() with delay dt, repeating N = dur/dt times
+        
+ 
+            
+        """
 
         start = time.time()
 
