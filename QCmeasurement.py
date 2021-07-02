@@ -6,7 +6,10 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.dataset.data_set import load_by_run_spec
 import numpy as np
 import time, math
+import pandas as pd
+from sklearn.cluster import KMeans
 
+from Qextraction import fitlor
 
 import matplotlib.pyplot as plt
 
@@ -295,3 +298,57 @@ class QCmeas():
                     datasaver.add_result(*res)
                 
         return datasaver.run_id
+    
+    ###Added by plamen 07/01/2021 for IQ blob discrimination
+    
+    def IQ(self,idx,alpha=0.2,kmeans=True,n_blobs=2,**kwargs):
+        _, Is, _, Qs = self.xy_by_id(idx)
+    
+        if kmeans==True:
+            fig, ax = plt.subplots(2,figsize=(5,7))
+    
+            X=np.array(list(zip(Is*1e3,Qs*1e3)))
+            kmeans = KMeans(n_clusters=n_blobs, random_state=0).fit(X)
+            labels=kmeans.labels_
+    
+            centers=kmeans.cluster_centers_
+            
+            df=pd.DataFrame(np.array([Is*1e3,Qs*1e3,labels]).T)
+    
+            for i in range(n_blobs):
+                ax[0].plot(df[df[2]==i][0],df[df[2]==i][1],'.',color='C'+str(i),alpha=alpha)
+    
+            ax[1].plot(labels,'.',alpha=0.2)
+    
+            ax[0].plot(centers[:,0],centers[:,1],'x',color='r')
+            ax[0].set_xlabel('I, mV')
+            ax[0].set_ylabel('Q, mV')
+            ax[1].set_ylabel('Blob')
+            ax[1].set_yticks([0,1])
+            ax[1].set_xlabel('Time step (~0.1s)')
+        else:
+            fig,ax=plt.subplots()
+            ax.plot(Is*1e3, Qs*1e3, '.', alpha = alpha)
+            ax.set_xlabel('I, mV')
+            ax.set_ylabel('Q, mV')
+
+    def Qfac(self,idx):
+        
+    
+        nu = self.xy_by_id(idx)[0]/1e9
+    #    y = 10**((bf.xy_by_id(idx)[1]-background)/10.0)
+        y = 10**((self.xy_by_id(idx)[1])/10.0)
+        
+        fig,ax = plt.subplots(1,1,figsize = (8,5))
+        ax.plot(nu, y)
+        p = fitlor(nu,y,showfit = True)
+        nu = p[2]
+      #  Q = p[2]/2/p[3]
+        kappa_t = 2*p[3]
+        kappa_c = np.sqrt(p[1])*p[3]
+        kappa_in = kappa_t-2*kappa_c
+        Q_c = nu/kappa_c
+        Q_in = nu/kappa_in
+        ax.axvline(p[2])
+        ax.axvline(p[2]-p[3])
+        return print ("Coupling  Q = ", np.round(Q_c),"Internal  Q = ", np.round(Q_in))
