@@ -15,14 +15,14 @@ class MWmeas(QCmeas):
 
     def S21_scan(self, ydevice, fast, slow=None, Navg = 1, N_card_avg = 4000, presets={}, label=''):
         """
-            Do scan through list of values(x_list) of any InstrParameter(x_var), meas any (y_var) adta and save to datasaver
+            Measures ydevice values going through list of fast (and slow) variables, setting presets before meas
 
             args:
-                datasaver: Datasaver to save results of the measurment
-                y_var: InstParameter to be measured (tested only on S21.ampl and S21/phase)
-                x_var: InstParameter to be scan (indep var)
-                x_list: list of values for be scan through
-                **kwargs: dict of the InstParameters and its values to add to datasaver (have to be defined in set_meas)
+                ydevice: InstParameter to be measured (like S21.ampl and S21.Q)
+                fast: dict(InstParameter : parameter_list) to go through as fast scan
+                slow: dict(InstParameter : parameter_list) to go through as slow scan
+                Navg: number of ydevice.get() to average
+                presets: dict of dict(InstParameter : parameter_value) to set before meas
         """
         # out = []
         iqmixer = self.tools['iqmixer']
@@ -95,7 +95,10 @@ class MWmeas(QCmeas):
     
     
     def single_pump_sweep(self, ydevice, fpump_list, Nsw ):
-        
+        """
+            Does quick pump scan with N_avg on card = 400, doing Nsw sweeps for extra avging
+
+        """        
         rnd = np.random.random
         buf = np.zeros((len(fpump_list), Nsw))
         iqmixer = self.tools['iqmixer']
@@ -132,6 +135,17 @@ class MWmeas(QCmeas):
     
     def pump_sweep_ftargs(self, ydevice, fpump_list, Nsw ,slow, ftarg_list,
                    presets = {}, label = ''):
+        
+        """
+            Performs single_pump_sweep() for each value of slow scan, setting fprobe from ftarg_list before each slow_value
+
+            args:
+                ydevice: InstParameter to be measured (like S21.ampl and S21.Q)
+                slow: dict(InstParameter : parameter_list) to go through as slow scan
+                Nsw: number of sweeps
+                ftarg_list: list of target fprobes to set before each single_pump_sweep, should be of the same size as fpump_list
+                presets: dict of dict(InstParameter : parameter_value) to set before meas
+        """
         
         xdevice = self.tools['fpump']
         
@@ -180,7 +194,15 @@ class MWmeas(QCmeas):
         
     def make_ftargs_by_id(self, idx, p_axis, p_list, shift_from_min = 0):
         
-        
+        """
+            Having runid with fast_fprobe slow_param scans, makes a list of target fprobes for second tone 
+
+            args:
+                idx: runid with completed 3d fast_fprobe x slow_param scan
+                p_axis: axis in runid which corresponds to param_scan 
+                p_list: list of parameter values we want to find target fprobes
+                shift_from_min: how far from S21_min do we want to set fprobe
+        """        
         data = self.xyz_by_id(idx)
         amps = data[2]
         params = data[p_axis ]
