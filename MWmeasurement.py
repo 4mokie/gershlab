@@ -13,7 +13,7 @@ class MWmeas(QCmeas):
 
         super().__init__(sample, tools, folder)
 
-    def S21_scan(self, ydevice, fast, slow=None, Navg = 1, presets={}, label=''):
+    def S21_scan(self, ydevice, fast, slow=None, Navg = 1, N_card_avg = 4000, presets={}, label=''):
         """
             Do scan through list of values(x_list) of any InstrParameter(x_var), meas any (y_var) adta and save to datasaver
 
@@ -60,19 +60,21 @@ class MWmeas(QCmeas):
             self.set_state(presets)
             time.sleep(1)
             
-            with iqmixer.ats.get_prepared(N_pts=8192, N_avg=4000):
+            with iqmixer.ats.get_prepared(N_pts=8192, N_avg=N_card_avg):
+           # with iqmixer.ats.get_prepared(N_pts=2048, N_avg=N_card_avg):
 
                 for x1 in tx1_list:
                     if slow is not None:
                         x1device.set(x1)
-                        time.sleep(.300)
+                     #   time.sleep(.300)
+                        time.sleep(.0100)
 
                     tx_list = tqdm_notebook(x_list, desc=f'{xlabel} = {SI(x_min)} to {SI(x_max)} {xunit} scan',
                                             leave=False)
                     for x in tx_list:
 
                         xdevice.set(x)
-                        time.sleep(.0100)
+                        time.sleep(.010)
                         tx_list.set_description('{} @ {}{}'.format(xlabel, SI(x), xunit))
 
                         
@@ -111,7 +113,13 @@ class MWmeas(QCmeas):
                     time.sleep(0.003)
     
                     iqmixer.ats.start_capturing() 
-                    S21 = ydevice.get()
+                    
+                    try:
+                        S21 = ydevice.get()    
+                    except RuntimeError:
+                        print(-1-i)
+                        break
+                    
                     
                     buf[i,j] = S21
     
