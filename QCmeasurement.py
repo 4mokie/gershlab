@@ -9,7 +9,7 @@ import time, math
 import pandas as pd
 from sklearn.cluster import KMeans
 
-from Qextraction import fitlor
+# from Qextraction import fitlor
 
 import matplotlib.pyplot as plt
 
@@ -407,23 +407,23 @@ class QCmeas():
             ax.set_xlabel('I, mV')
             ax.set_ylabel('Q, mV')
 
-    def Qfac(self,idx):
+    # def Qfac(self,idx):
         
     
-        nu = self.xy_by_id(idx)[0]/1e9
-    #    y = 10**((bf.xy_by_id(idx)[1]-background)/10.0)
-        y = 10**((self.xy_by_id(idx)[1])/10.0)
+    #     nu = self.xy_by_id(idx)[0]/1e9
+    # #    y = 10**((bf.xy_by_id(idx)[1]-background)/10.0)
+    #     y = 10**((self.xy_by_id(idx)[1])/10.0)
         
-        fig,ax = plt.subplots(1,1,figsize = (8,5))
-        ax.plot(nu, y)
-        p = fitlor(nu,y,showfit = True)
-        nu = p[2]
-      #  Q = p[2]/2/p[3]
-        kappa_t = 2*p[3]
-        kappa_c = np.sqrt(p[1])*p[3]
-        kappa_in = kappa_t-2*kappa_c
-        Q_c = nu/kappa_c
-        Q_in = nu/kappa_in
-        ax.axvline(p[2])
-        ax.axvline(p[2]-p[3])
-        return print ("Coupling  Q = ", np.round(Q_c),"Internal  Q = ", np.round(Q_in))
+    #     fig,ax = plt.subplots(1,1,figsize = (8,5))
+    #     ax.plot(nu, y)
+    #     p = fitlor(nu,y,showfit = True)
+    #     nu = p[2]
+    #   #  Q = p[2]/2/p[3]
+    #     kappa_t = 2*p[3]
+    #     kappa_c = np.sqrt(p[1])*p[3]
+    #     kappa_in = kappa_t-2*kappa_c
+    #     Q_c = nu/kappa_c
+    #     Q_in = nu/kappa_in
+    #     ax.axvline(p[2])
+    #     ax.axvline(p[2]-p[3])
+    #     return print ("Coupling  Q = ", np.round(Q_c),"Internal  Q = ", np.round(Q_in))
